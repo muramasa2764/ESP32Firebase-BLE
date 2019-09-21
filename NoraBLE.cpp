@@ -1,6 +1,6 @@
 /****************************************
- * 野良ハック B1144向けBLEライブラリ Ver.0.1
- * 2019/8/6 Y.Iida
+ * 野良ハック B1144向けBLEライブラリ Ver.1.2
+ * 2019/9/12 だーいー
  *****************************************/
 #include "BLEDevice.h"
 #include <string.h>
@@ -143,9 +143,36 @@ bool CNoraBLE::SetMode(uint8_t mde)
 /****************************************
  * [関数] SetString
  * [引数] char  *str  表示する文字列
+ * [戻り値] true 固定
+ * [処理] 表示文字列の設定（正規版）
+ ****************************************/
+bool CNoraBLE::SetString(char *str)
+{
+  int len = 0;
+  if(m_str != NULL){
+    delete[] m_str;
+    m_str = NULL;
+    m_datalen = 0;
+  }
+  // 文字数を獲得する
+  len = u8len(str);
+
+  if(strlen(str) <= 0 || len <= 0){
+    m_datalen = 0;
+    return true;
+  }
+  m_str = new char[strlen(str)+1];
+  memset(m_str, '\0', strlen(str)+1);
+  strcpy(m_str, str);
+  m_datalen = len;
+  return true;
+}
+/****************************************
+ * [関数] SetString
+ * [引数] char  *str  表示する文字列
  *        int   len　文字の数(半角も全角も１文字は1でカウント)
  * [戻り値] true 固定
- * [処理] スピード設定
+ * [処理] 表示文字列を設定（ベータ版）
  ****************************************/
 bool CNoraBLE::SetString(char *str, int len)
 {
@@ -295,7 +322,7 @@ int CNoraBLE::MakeData(void)
   for(int i = 0; i < m_datalen; i++){
     memset(font, '\0', sizeof(font));
      // 1文字分の美咲フォントパターンを取得
-    if((p = getFontData(font, p)) == NULL){
+    if((p = getFontData(font, p, true)) == NULL){
       break;
     }
     // 1文字分のパターンをデータ領域に設定
@@ -378,4 +405,44 @@ int CNoraBLE::SearchDevice(char *address)
     }
   }
   return -1;
+}
+
+/****************************************
+ * [関数] u8mb
+ * [引数] const char chr  確認対象の1文字
+ * [戻り値] UTF8の1文字分サイズ
+ * [処理] UTF8の1文字分サイズを返す
+ ****************************************/
+int CNoraBLE::u8mb(const char chr)
+{
+  int byt = 1;
+  if ((chr & 0x80) == 0x00) { //1byte文字は何もしない（[byt = 1]のまま）
+  } else if ((chr & 0xE0) == 0xC0) { //2byte文字
+    byt = 2;
+  } else if ((chr & 0xF0) == 0xE0) { //3byte文字
+    byt = 3;
+  } else if ((chr & 0xF8) == 0xF0) { //4byte文字
+    byt = 4;
+  } else if ((chr & 0xFC) == 0xF8) { //5byte文字
+    byt = 5;
+  } else if ((chr & 0xFE) == 0xFC) { //6byte文字
+    byt = 6;
+  }
+  return byt;
+}
+
+/****************************************
+ * [関数] u8len
+ * [引数] const char *str  文字数確認対象の文字列
+ * [戻り値] 文字数
+ * [処理] UFT8を含む文字列から文字数をカウントして返す
+ ****************************************/
+int CNoraBLE::u8len(const char *str)
+{
+  int cnt = 0;
+  while (*str != '\0') {
+    cnt++;
+    str += u8mb(*str);
+  }
+  return cnt;
 }

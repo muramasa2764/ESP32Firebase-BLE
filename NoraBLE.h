@@ -39,6 +39,8 @@ class CNoraBLE
     BLEClient   *m_pClient;
     int         MakeData(void);
     bool        SendData(int index, int formsize);
+    int         u8mb(const char chr);
+    int         u8len(const char *str);
   public:
     CNoraBLE(); // コンストラクタ
     ~CNoraBLE();  // デストラクタ
@@ -48,7 +50,8 @@ class CNoraBLE
     bool SetMarqee(bool flg);
     bool SetSpeed(uint8_t spd);
     bool SetMode(uint8_t mde);
-    bool SetString(char *str, int len);
+    bool SetString(char *str);
+    bool SetString(char *str, int len); // ベータ用の関数
     int GetDevicenum(void);
     char* GetDeviceAddress(int index);
     bool GetFlash(void);
